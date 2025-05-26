@@ -13,12 +13,12 @@
 </head>
 
 <body>
-<div th:replace="fragments/header :: header"></div>
+
 
 <div class="container my-4">
   <div class="card">
     <div class="card-body">
-
+      <div th:replace="fragments/header :: header"></div>
       <!-- Messages de notification -->
       <div th:if="${message}" class="alert alert-success alert-dismissible fade show">
         <span th:text="${message}"></span>
