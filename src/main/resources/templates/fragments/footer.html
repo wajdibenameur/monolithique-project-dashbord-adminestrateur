@@ -1,0 +1,21 @@
+<!-- templates/fragments/footer.html -->
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="https://www.thymeleaf.org/extras/spring-security">
+<head>
+</head>
+<body>
+<div th:fragment="footer">
+    <div class="container text-center" style="padding-top: 200px;">
+        <footer class="mt-5">
+            &copy; 2025 SIP
+            <span sec:authorize="isAuthenticated()">
+                | Utilisateur connecté : <strong><span sec:authentication="name"></span></strong> |
+                Rôle(s) : <strong><span sec:authentication="authorities"></span></strong>
+            </span>
+        </footer>
+    </div>
+</div>
+</body>
+</html>
