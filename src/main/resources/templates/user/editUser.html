@@ -1,68 +1,97 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Modifier un compte utilisateur</title>
-    <!-- Bootstrap 5 CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <title>Modifier un utilisateur</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-
 <div class="container mt-5">
-    <div th:replace="fragments/header :: header"></div>
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Modifier l'utilisateur</h3>
+                </div>
 
-            <h3>Modifier le compte utilisateur</h3>
+                <div class="card-body">
+                    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span th:text="${error}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <div th:if="${message}" class="alert alert-success alert-dismissible fade show">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <span th:text="${message}"></span>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+
+                    <form th:action="@{/accounts/edit/{id}(id=${user.id})}" th:object="${user}" method="post">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nom :</label>
+                                <input type="text" th:field="*{name}" class="form-control"/>
+                                <div class="text-danger small" th:errors="*{name}"></div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Prénom :</label>
+                                <input type="text" th:field="*{lastName}" class="form-control"/>
+                                <div class="text-danger small" th:errors="*{lastName}"></div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Email :</label>
+                            <input type="email" th:field="*{email}" class="form-control"/>
+                            <div class="text-danger small" th:errors="*{email}"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Nouveau mot de passe :</label>
+                            <input type="password" name="password" class="form-control" placeholder="Laisser vide pour ne pas changer"/>
+                            <small class="text-muted">Laisser vide si vous ne voulez pas changer le mot de passe</small>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Statut :</label>
+                            <select th:field="*{active}" class="form-select">
+                                <option value="1">Actif</option>
+                                <option value="0">Inactif</option>
+                            </select>
+                        </div>
+
+                        <!-- CORRECTION: Changer name="role" en name="roleType" -->
+                        <div class="mb-3">
+                            <label class="form-label">Rôle <span class="text-danger">*</span> :</label>
+                            <select name="roleType" class="form-select" required>
+                                <option value="">Sélectionner un rôle</option>
+                                <option th:each="roleType : ${allRoles}"
+                                        th:value="${roleType.name()}"
+                                        th:text="${roleType.getDisplayName()}"
+                                        th:selected="${user.role != null && user.role.role == roleType}">
+                                </option>
+                            </select>
+                            <small class="text-muted">Rôle actuel :
+                                <span th:text="${user.role != null ? user.role.role.getDisplayName() : 'Aucun'}"></span>
+                            </small>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a th:href="@{/accounts/list}" class="btn btn-secondary me-md-2">Annuler</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Modifier l'utilisateur
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
-
-<form th:action="@{/accounts/edit/{id}(id=${user.id})}" th:object="${user}" method="post">
-    <input type="hidden" th:field="*{id}"/>
-
-    <div class="form-group">
-        <label>Nom :</label>
-        <input type="text" th:field="*{name}" class="form-control"/>
-    </div>
-
-    <div class="form-group">
-        <label>Prénom :</label>
-        <input type="text" th:field="*{lastName}" class="form-control"/>
-    </div>
-
-    <div class="form-group">
-        <label>Email :</label>
-        <input type="email" th:field="*{email}" class="form-control"/>
-    </div>
-
-    <div class="form-group">
-        <label>Mot de passe (laisser vide pour ne pas modifier) :</label>
-        <input type="password" th:field="*{password}" class="form-control"/>
-    </div>
-
-    <div class="form-group">
-        <label>Actif :</label>
-        <select th:field="*{active}" class="form-control">
-            <option value="1">Oui</option>
-            <option value="0">Non</option>
-        </select>
-    </div>
-
-<!--    <div class="form-group">-->
-<!--        <label>Rôles :</label>-->
-<!--        <select th:field="*{roles}" multiple="multiple" class="form-control">-->
-<!--            <option th:each="role : ${allRoles}"-->
-<!--                    th:value="${role.id}"-->
-<!--                    th:text="${role.role}">-->
-<!--                &lt;!&ndash; Commentaire valide ici &ndash;&gt;-->
-<!--            </option>-->
-<!--        </select>-->
-<!--    </div>-->
-
-    <button type="submit" class="btn btn-primary">Enregistrer</button>
-    <a th:href="@{/accounts/list}" class="btn btn-secondary">Annuler</a>
-</form>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

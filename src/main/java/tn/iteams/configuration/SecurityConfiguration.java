@@ -1,123 +1,75 @@
 package tn.iteams.configuration;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-
-import javax.sql.DataSource;
+import tn.iteams.services.UserService;
 
 @EnableWebSecurity
 @Configuration
 public class SecurityConfiguration {
 
-
-    private final DataSource dataSource;
-
-    private final BCryptPasswordEncoder bCryptPasswordEncoder;
-
-    @Value("${spring.queries.users-query}")
-    private String usersQuery;
-
-    @Value("${spring.queries.roles-query}")
-    private String rolesQuery;
-
+    @Autowired
+    private UserService userService;
 
     @Autowired
-    public SecurityConfiguration(DataSource dataSource, BCryptPasswordEncoder bCryptPasswordEncoder) {
-        super();
-        this.dataSource = dataSource;
-        this.bCryptPasswordEncoder = bCryptPasswordEncoder;
-    }
+    private BCryptPasswordEncoder bCryptPasswordEncoder;
 
-
-    @Autowired
-    public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-        auth
-                .jdbcAuthentication()
-                .dataSource(dataSource)
-                .usersByUsernameQuery(usersQuery)
-                .authoritiesByUsernameQuery(rolesQuery)
-                .passwordEncoder(bCryptPasswordEncoder);
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(userService);
+        authProvider.setPasswordEncoder(bCryptPasswordEncoder);
+        return authProvider;
     }
 
     @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
 
+    @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+        http.authenticationProvider(authenticationProvider());
 
-                //.csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login","/registration","/roles/**","/accounts/**").permitAll()
-                        .requestMatchers("/providers/**").hasAnyAuthority("ADMIN", "SUPERADMIN")
-                        .requestMatchers("/articles/**").hasAnyAuthority("USER", "SUPERADMIN")
-                        .requestMatchers("/role/**").hasAnyAuthority("ADMIN")
-                        .requestMatchers("/accounts/**").hasAuthority("ADMIN")
-                        // .requestMatchers("/providers/**").hasAuthority("ADMIN")
-                        //.requestMatchers("/articles/**").hasAuthority("USER")
+        http.authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/","/login", "/registration", "/css/**", "/js/**", "/images/**").permitAll()
+                        .requestMatchers("/admin/**").hasAnyRole("ADMIN", "SUPERADMIN")
+                        .requestMatchers("/role/**").hasRole("ADMIN")
+                        .requestMatchers("/prof/**").hasRole("PROF")
+                        .requestMatchers("/etudiant/**").hasRole("ETUDIANT")
+                        .requestMatchers("/articles/**").hasAnyRole("USER", "ETUDIANT", "PROF", "ADMIN", "SUPERADMIN")
                         .anyRequest().authenticated()
                 )
-
                 .formLogin(formLogin -> formLogin
                         .loginPage("/login")
                         .failureUrl("/login?error=true")
-                        .defaultSuccessUrl("/home",true) // page d'accueil après login avec succès
-                        .usernameParameter("email") // paramètres d'authentifications login et password
+                        .defaultSuccessUrl("/home", true)
+                        .usernameParameter("email")
                         .passwordParameter("password")
+                        .permitAll()
                 )
-
                 .logout(logout -> logout
-                        .logoutUrl("/logout") // L’URL de déconnexion
-                        .logoutSuccessUrl("/login?logout=true") // Redirection après logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout=true")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")
                         .permitAll()
                 );
+
         return http.build();
     }
 
-
     @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() throws Exception {
-        return (web) -> web.ignoring().requestMatchers("/css/**", "/images/**");
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        return web -> web.ignoring().requestMatchers("/css/**", "/js/**", "/images/**", "/static/**");
     }
-
-    // laisser l'accès aux ressources
-   /* @Override
-    public void configure(WebSecurity web) throws Exception {
-        web
-                .ignoring()
-                .requestMatchers("/resources/**", "/static/**", "/css/**", "/js/**", "/images/**");
-    }*/
-
-
-
-
-  /*
-	@Bean
-    public SecurityFilterChain configure(HttpSecurity http) throws Exception {
-		  http.csrf().disable().authorizeRequests()
-    	  .requestMatchers("/providers/**").hasAuthority("ADMIN")
-          .requestMatchers("/articles/**").hasAuthority("USER")
-          .requestMatchers("/role/**").permitAll()
-          .requestMatchers("/accounts/**").permitAll()
-          .and().formLogin()
-          .loginPage("/login")
-          .failureUrl("/login?error=true")
-          .defaultSuccessUrl("/home") // page d'accueil après login avec succès
-          .usernameParameter("email") // paramètres d'authentifications login et password
-          .passwordParameter("password")
-          .and().logout()
-          .logoutRequestMatcher(new AntPathRequestMatcher("/logout")) // route de deconnexion ici /logut
-          .logoutSuccessUrl("/login");
-    	  return http.build();
-    }*/
-
-
 }

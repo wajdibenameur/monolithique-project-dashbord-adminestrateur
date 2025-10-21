@@ -1,0 +1,119 @@
+
+classDiagram
+
+  direction BT
+@startuml
+enum typeRole {
+  STUDENT
+  TEACHER
+  ADMIN
+}
+  class Utilisateur {
+    id : int
+    nom : string
+    prénom : string
+    email : string
+    motDePasse : string
+    rôle : typeRole
+    actif : boolean
+  }
+
+  class Cours {
+    id : int
+    titre : string
+    description : string
+    dateCréation : date
+    enseignant_id : int
+    statut : string
+  }
+
+  class Chapitre {
+    id : int
+    titre : string
+    contenu : text
+    cours_id : int
+  }
+
+  class Ressource {
+    id : int
+    type : string
+    lien : string
+    chapitre_id : int
+  }
+
+  class Quiz {
+    id : int
+    titre : string
+    chapitre_id : int
+  }
+
+  class Question {
+    id : int
+    texte : string
+    quiz_id : int
+  }
+
+  class Réponse {
+    id : int
+    texte : string
+    correcte : boolean
+    question_id : int
+  }
+
+  class Inscription {
+    id : int
+    etudiant_id : int
+    cours_id : int
+    date_inscription : date
+  }
+
+  class Commentaire {
+    id : int
+    contenu : text
+    date : date
+    chapitre_id : int
+    utilisateur_id : int
+    commentaire_parent_id : int
+  }
+
+  class RésultatQuiz {
+    id : int
+    etudiant_id : int
+    quiz_id : int
+    score : int
+  }
+
+  class Progression {
+    id : int
+    etudiant_id : int
+    cours_id : int
+    chapitre_id : int
+    état : string
+  }
+
+  class Statistique {
+    id : int
+    nbEtudiants : int
+    nbCours : int
+    nbQuiz : int
+    tauxReussite : float
+  }
+
+  Utilisateur "1" --* "N" Cours : enseigne
+  Utilisateur "1" -- "N" Inscription : a
+  Cours "1" -- "N" Inscription : a
+  Cours "1" --* "N" Chapitre : contient
+  Chapitre "1" --* "N" Ressource : contient
+  Chapitre "1" --* "N" Quiz : contient
+  Quiz "1" --* "N" Question : contient
+  Question "1" --* "N" Réponse : a
+  Quiz "1" -- "N" RésultatQuiz : génère
+  Utilisateur "1" -- "N" RésultatQuiz : obtient
+  Utilisateur "1" -- "N" Commentaire : écrit
+  Chapitre "1" -- "N" Commentaire : contient
+  Commentaire "0..1" -- "0..N" Commentaire : répond à
+  Utilisateur "1" -- "N" Progression : a
+  Cours "1" -- "N" Progression : concerne
+  Chapitre "1" -- "N" Progression : concerne
+  Cours "0..N" -- "0..N" Statistique : concerne
+  @enduml

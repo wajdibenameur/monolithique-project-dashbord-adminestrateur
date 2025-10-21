@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import tn.iteams.entities.Role;
+import tn.iteams.entities.TypeRole;
 import tn.iteams.repositories.RoleRepository;
 
 import java.util.List;
@@ -30,7 +31,7 @@ public class RoleController {
 
         List<Role> roles = (List<Role>) roleRepository.findAll();
         long nbr =  roleRepository.count();
-        if(roles.size()==0)
+        if(roles.isEmpty())
             roles = null;
         model.addAttribute("roles", roles);
         model.addAttribute("nbr", nbr);
@@ -48,7 +49,7 @@ public class RoleController {
     public String addRole(@RequestParam("role") String role) {
 
         System.out.println(role);
-        Role r = new Role(role);
+        Role r = new Role(TypeRole.valueOf(role));
         Role rSaved = roleRepository.save(r);
         System.out.println("role = "+ rSaved);
         return "redirect:list";

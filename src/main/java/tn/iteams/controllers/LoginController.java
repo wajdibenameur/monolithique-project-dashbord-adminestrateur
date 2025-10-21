@@ -17,7 +17,11 @@ import tn.iteams.services.UserService;
 public class LoginController {
     @Autowired
     private UserService userService;
-    @RequestMapping(value={"/", "/login"}, method = RequestMethod.GET)
+    @GetMapping("/")
+    public String index() {
+        return "index";
+    }
+    @RequestMapping(value={ "/login"}, method = RequestMethod.GET)
     public ModelAndView login(){
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("login");

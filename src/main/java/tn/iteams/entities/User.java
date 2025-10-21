@@ -10,6 +10,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import jakarta.persistence.Id;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 @NoArgsConstructor@AllArgsConstructor@Getter@Setter
@@ -17,10 +19,6 @@ import java.util.Set;
 @Entity
 @Table(name="user")
 public class User implements UserDetails {
-    /**
-     *
-     */
-    //private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,19 +44,25 @@ public class User implements UserDetails {
     private String lastName;
 
     @Column(name = "active")
-    private int active;
+    private Integer active;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
-    private Set<Role> roles;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id")
+    private Role role;
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getRole()))
-                .toList();
-    }
 
+        if (role == null) {
+            return Collections.emptyList();
+        }
+
+                String roleName = role.getRole().name();
+
+        return List.of(new SimpleGrantedAuthority(roleName));
+    }
     @Override
     public String getUsername() {
         // TODO Auto-generated method stub
@@ -67,22 +71,22 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true; // pas de gestion de l'expiration
+        return true;
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true; // pas de gestion d'expiration des credentials
+        return true;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return this.active == 1; // compte activé = non bloqué
+        return this.active == 1;
     }
 
     @Override
     public boolean isEnabled() {
-        return this.active == 1; // compte activé = enabled
+        return this.active == 1;
     }
 
 }

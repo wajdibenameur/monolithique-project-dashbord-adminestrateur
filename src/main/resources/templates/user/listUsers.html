@@ -65,23 +65,23 @@
             <td th:text="${user.name}"></td>
             <td th:text="${user.email}"></td>
             <td>
-              <span th:if="${not #lists.isEmpty(user.roles)}" th:text="${user.roles[0].role}"></span>
-              <span th:if="${#lists.isEmpty(user.roles)}">No Role</span>
-
+              <span th:if="${user.role != null}" th:text="${user.role.role.getDisplayName()}"></span>
+              <span th:if="${user.role == null}">No Role</span>
             </td>
             <td>
               <form method="post" th:action="@{/accounts/updateRole}">
                 <div class="input-group">
-                  <select name="newrole" class="form-control">
+                  <select name="newrole" class="form-select">
+                    <option value="">-- Sélectionner un rôle --</option>
                     <option th:each="role : ${allRoles}"
-                            th:value="${role.role}"
-                            th:selected="${not #lists.isEmpty(user.roles) and role.role == user.roles[0].role}"
-                            th:text="${role.role}">
+                            th:value="${role.name()}"
+                            th:text="${role.getDisplayName()}"
+                            th:selected="${user.role != null and user.role.role == role}">
                     </option>
                   </select>
                   <input type="hidden" name="id" th:value="${user.id}" />
                   <button type="submit" class="btn btn-sm btn-primary">
-                    <i class="fas fa-sync"></i>
+                    <i class="fas fa-sync"></i> Modifier
                   </button>
                 </div>
                 <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />

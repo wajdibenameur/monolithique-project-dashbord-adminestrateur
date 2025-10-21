@@ -2,11 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-  <title>AMS-Dashboard</title>
-  <head>
-    <link rel="stylesheet" th:href="@{/bootstrap/bootstrap.css}" />
-    <link rel="stylesheet" th:href="@{/css/style.css}" />
-  </head>
+  <title>Dashboard</title>
+  <link rel="stylesheet" th:href="@{/bootstrap/bootstrap.css}" />
+  <link rel="stylesheet" th:href="@{/css/style.css}" />
 </head>
 
 <body>
@@ -17,24 +15,35 @@
     <div class="card-body">
       <div th:replace="fragments/header :: header"></div>
 
+      <div class="row">
+        <!-- Menu à gauche -->
+        <nav class="col-md-3">
+          <ul class="list-group">
+            <li class="list-group-item" sec:authorize="hasAuthority('ROLE_SUPERADMIN')">
+              <a th:href="@{/accounts/list}">Gestion des comptes</a>
+            </li>
+            <!-- Ajouter d'autres liens de menu ici -->
+            <li class="list-group-item">
+              <a th:href="@{/other/page}">Autre page</a>
+            </li>
+          </ul>
+        </nav>
 
-<div class="container">
-  <div class="starter-template">
-<!--    <h1>Welcome to our Article Management System Dashboard</h1>-->
-<!--    <h2>1. Visit our Providers, You must have ADMIN role <a th:href="@{/provider/list}">Providers</a></h2>-->
-<!--    <h2>2. Visit our Article, You must have USER role <a th:href="@{/article/list}">Articles</a></h2>-->
+        <!-- Contenu à droite -->
+        <main class="col-md-9">
+          <div class="starter-template">
+            <h2 sec:authorize="hasAuthority('ROLE_SUPERADMIN')">
+              Gestion réservée au Super Admin
+            </h2>
 
-<!--    &lt;!&ndash; Lien visible seulement pour SUPERADMIN &ndash;&gt;-->
-    <h2 sec:authorize="hasAnyAuthority('SUPERADMIN')">
-      3. Gestion réservée au Super Admin : <a th:href="@{/accounts/list}">Gestion</a>
-    </h2>
-  </div>
-  <div>
-    <h2 sec:authorize="hasAnyAuthority('SUPERADMIN')">
-      3. Gestion réservée au Super Admin : <a th:href="@{/accounts/list}">Gestion</a>
-    </h2>
-  </div>
-</div>
+            <!-- Ici tu peux afficher dynamiquement le contenu du menu sélectionné -->
+            <div>
+              <p>Bienvenue sur le tableau de bord. Sélectionnez une option dans le menu.</p>
+            </div>
+          </div>
+        </main>
+      </div>
+
     </div>
   </div>
 </div>

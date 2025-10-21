@@ -1,6 +1,4 @@
-
 package tn.iteams.controllers;
-
 
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,19 +11,15 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import tn.iteams.entities.Role;
+import tn.iteams.entities.TypeRole;
 import tn.iteams.entities.User;
 import tn.iteams.repositories.RoleRepository;
 import tn.iteams.repositories.UserRepository;
-
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
 @Controller
 @RequestMapping("/accounts/")
-
 public class AccountController {
-
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -35,6 +29,7 @@ public class AccountController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
     @Autowired
     public AccountController(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
@@ -43,23 +38,19 @@ public class AccountController {
 
     @GetMapping("list")
     public String listUsers(Model model) {
-
         List<User> users = (List<User>) userRepository.findAll();
         long nbr = userRepository.count();
-        if (users.size() == 0)
+        if (users.isEmpty())
             users = null;
         model.addAttribute("users", users);
         model.addAttribute("nbr", nbr);
-        model.addAttribute("allRoles", roleRepository.findAll());
+        model.addAttribute("allRoles", TypeRole.values());
         return "user/listUsers";
     }
 
     @GetMapping("enable/{id}/{email}")
-    //@ResponseBody
     public String enableUserAcount(@PathVariable("id") Long id,
                                    @PathVariable("email") String email, RedirectAttributes redirectAttributes) {
-
-
         User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid User Id:" + id));
         user.setActive(1);
         userRepository.save(user);
@@ -70,11 +61,8 @@ public class AccountController {
     }
 
     @GetMapping("disable/{id}/{email}")
-    //@ResponseBody
     public String disableUserAcount(@PathVariable("id") Long id,
-                                    @PathVariable("email") String email,RedirectAttributes redirectAttributes) {
-
-
+                                    @PathVariable("email") String email, RedirectAttributes redirectAttributes) {
         User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid User Id:" + id));
         user.setActive(0);
         userRepository.save(user);
@@ -84,27 +72,37 @@ public class AccountController {
         return "redirect:../../list";
     }
 
-
     @PostMapping("updateRole")
     public String UpdateUserRole(@RequestParam("id") Long id,
-                                 @RequestParam("newrole") String newRole,
+                                 @RequestParam("newrole") String newRoleName,
                                  RedirectAttributes redirectAttributes) {
-        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid User Id:" + id));
-        String oldRole = user.getRoles().isEmpty() ? "Aucun" :
-                user.getRoles().iterator().next().getRole();
-        Role userRole = roleRepository.findByRole(newRole);
-        user.setRoles(new HashSet<>(Arrays.asList(userRole)));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid User Id:" + id));
+
+        // Obtenir l'ancien rôle (s'il existe)
+        String oldRole = (user.getRole() != null) ? user.getRole().getRole().name() : "Aucun";
+
+        // Trouver et assigner le nouveau rôle
+        TypeRole typeRole = TypeRole.valueOf(newRoleName);
+        Role newRole = roleRepository.findByRole(typeRole);
+        user.setRole(newRole);
+
         userRepository.save(user);
-        sendEmail(user.getEmail(), "role_change", newRole);
-        redirectAttributes.addFlashAttribute("message", "Rôle modifié de " + oldRole + " à " + newRole);
-        System.out.println(">>> Email envoyé avec succès modification role : " + user.getEmail());
+
+        sendEmail(user.getEmail(), "role_change", newRoleName);
+
+        redirectAttributes.addFlashAttribute("message",
+                "Rôle modifié de [" + oldRole + "] à [" + newRoleName + "]");
+        System.out.println(">>> Email envoyé avec succès modification rôle : " + user.getEmail());
+
         return "redirect:list";
     }
+
     @GetMapping("add")
     public String showAddUserForm(Model model) {
         model.addAttribute("user", new User());
-        model.addAttribute("allRoles", roleRepository.findAll());
-        return "user/addUser"; // page Thymeleaf à créer
+        model.addAttribute("allRoles", TypeRole.values());
+        return "user/addUser";
     }
 
     @PostMapping("add")
@@ -112,39 +110,79 @@ public class AccountController {
             @ModelAttribute @Valid User user,
             BindingResult bindingResult,
             Model model,
-            @RequestParam("role") String roleName,
-            RedirectAttributes redirectAttributes)
-    {
-        // Vérifier erreurs de validation classiques
-        if (bindingResult.hasErrors()) {
-            model.addAttribute("allRoles", roleRepository.findAll());
-            return "user/addUser"; // Affiche le formulaire avec erreurs
+            @RequestParam("roleType") String roleName,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            // les rôles au modèle affiche
+            model.addAttribute("allRoles", TypeRole.values());
+            System.out.println(">>> roleName reçu = " + roleName);
+
+            // Validation des champs
+            if (bindingResult.hasErrors()) {
+                System.out.println(">>> Erreurs de validation détectées : " + bindingResult.getAllErrors());
+                return "user/addUser";
+            }
+
+            // Vérifier  l'email
+            if (userRepository.findByEmail(user.getEmail()) != null) {
+                bindingResult.rejectValue("email", "error.user", "Cet email est déjà utilisé.");
+                return "user/addUser";
+            }
+
+            // Validation du rôle (obligatoire)
+            if (roleName == null || roleName.isEmpty()) {
+                model.addAttribute("error", "Veuillez sélectionner un rôle.");
+                return "user/addUser";
+            }
+
+            // Encoder le mot de passe
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+
+            // Gestion du rôle
+            try {
+                System.out.println(">>> Parsing rôle : " + roleName);
+                TypeRole typeRole = TypeRole.valueOf(roleName);
+
+                System.out.println(">>> TypeRole converti : " + typeRole);
+                Role role = roleRepository.findByRole(typeRole);
+
+                System.out.println(">>> Rôle trouvé : " + role);
+
+                if (role == null) {
+                    System.out.println(">>> Création d'un nouveau rôle");
+                    role = new Role(typeRole);
+                    roleRepository.save(role);
+                    System.out.println(">>> Nouveau rôle sauvegardé");
+                }
+
+                user.setRole(role);
+
+            } catch (IllegalArgumentException e) {
+                model.addAttribute("error", "Rôle invalide : " + roleName);
+                return "user/addUser";
+            }
+
+
+            user.setActive(0);
+
+            // Sauvegarder l'utilisateur
+            userRepository.save(user);
+
+            // Envoyer un email de notification
+            sendEmail(user.getEmail(), "create", "Bienvenue sur notre plateforme !");
+            System.out.println(">>> Email envoyé avec succès à : " + user.getEmail());
+
+            redirectAttributes.addFlashAttribute("message",
+                    "Utilisateur créé avec succès ! Un email a été envoyé.");
+
+            return "redirect:/accounts/list";
+
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la création : " + e.getMessage());
+            model.addAttribute("error", "Erreur technique : " + e.getMessage());
+            return "user/addUser";
         }
-
-        // Vérifier si l'email existe déjà
-        if (userRepository.findByEmail(user.getEmail()) != null) {
-            bindingResult.rejectValue("email", "error.user", "Cet email est déjà utilisé.");
-            model.addAttribute("allRoles", roleRepository.findAll());
-            return "user/addUser"; // Retour au formulaire avec message d'erreur
-        }
-
-        // Encoder le mot de passe
-        String encodedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(encodedPassword);
-
-        // Récupérer et attribuer le rôle
-        Role role = roleRepository.findByRole(roleName);
-        user.setRoles(new HashSet<>(Arrays.asList(role)));
-
-        // Sauvegarder l'utilisateur
-        userRepository.save(user);
-
-        // Envoyer l'email de notification
-        sendEmail(user.getEmail(), "create", "motDePasseTemporaire");
-        System.out.println(">>> Email envoyé avec succès à : " + user.getEmail());
-        redirectAttributes.addFlashAttribute("message", "Utilisateur créé et mail envoyé !");
-
-        return "redirect:/accounts/list";
     }
 
     @GetMapping("edit/{id}")
@@ -152,61 +190,61 @@ public class AccountController {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid User Id:" + id));
         model.addAttribute("user", user);
-        model.addAttribute("allRoles", roleRepository.findAll());
-        return "user/editUser"; // page Thymeleaf à créer
+        model.addAttribute("allRoles", TypeRole.values());
+        return "user/editUser";
     }
 
     @PostMapping("edit/{id}")
     public String updateUser(@PathVariable Long id,
                              @ModelAttribute User user,
-                             @RequestParam(value = "roles", required = false) List<String> roleNames,RedirectAttributes redirectAttributes) {
+                             @RequestParam(value = "roleType") String roleName,
+                             RedirectAttributes redirectAttributes) {
+
         User existingUser = userRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid User Id:" + id));
 
         existingUser.setName(user.getName());
         existingUser.setLastName(user.getLastName());
         existingUser.setEmail(user.getEmail());
-        user.setRoles(user.getRoles());
+        existingUser.setActive(user.getActive());
 
-        // Garder l'ancien mot de passe s'il n'a pas été modifié
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
         }
 
-        // Gérer les rôles
-        if (roleNames != null && !roleNames.isEmpty()) {
-            HashSet<Role> roles = new HashSet<>();
-            for (String roleName : roleNames) {
-                Role r = roleRepository.findByRole(roleName);
-                if (r != null) roles.add(r);
-            }
-            existingUser.setRoles(roles);
-        }
-
-        existingUser.setActive(user.getActive());
+        // Assign le nouveau rôle
+        TypeRole typeRole = TypeRole.valueOf(roleName);
+        Role role = roleRepository.findByRole(typeRole);
+        existingUser.setRole(role);
 
         userRepository.save(existingUser);
         sendEmail(existingUser.getEmail(), "update", null);
-        redirectAttributes.addFlashAttribute("message", "Utilisateur modifié avec succès !");
-        System.out.println(">>> Email envoyé avec succès update compte : " + user.getEmail());
+        redirectAttributes.addFlashAttribute("message", "Utilisateur modifié avec succès un mail information envoyé !");
+        System.out.println(">>> Email envoyé avec succès update compte : " + existingUser.getEmail());
+
         return "redirect:/accounts/list";
     }
 
-
     @GetMapping("delete/{id}")
-    public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes ) {
-        User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid User Id:" + id));
-        sendEmail(user.getEmail(), "delete_user", user.getRoles().iterator().next().getRole());
+    public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid User Id: " + id));
+
+        // Préparer le rôle pour le mail
+        String roleName = (user.getRole() != null) ? user.getRole().getRole().name() : "Aucun rôle";
+
+        // Envoi l'email de notification
+        sendEmail(user.getEmail(), "delete_user", roleName);
+        System.out.println(">>> Email envoyé avec succès de suppression de compte : " + user.getEmail());
+
+        // Suppr user
         userRepository.delete(user);
-        System.out.println(">>> Email envoyé avec succès de suprime compte : " + user.getEmail());
         redirectAttributes.addFlashAttribute("message", "Utilisateur supprimé avec succès !");
-        System.out.println(">>> Email envoyé avec succès Compte supprimé  : " + user.getEmail());
 
         return "redirect:../list";
     }
 
-
-    // Modifier la méthode sendEmail
+    // Méthode sendEmail inchangée
     void sendEmail(String email, String actionType, String additionalInfo) {
         SimpleMailMessage msg = new SimpleMailMessage();
         msg.setTo(email);
@@ -216,16 +254,19 @@ public class AccountController {
             case "mail_activation":
                 msg.setSubject("Activation de compte");
                 msg.setText("Votre compte a été activé avec succès !");
+                baseUrl = baseUrl + "/activation";
                 break;
 
             case "mail_deactivation":
                 msg.setSubject("Désactivation de compte");
                 msg.setText("Votre compte a été désactivé.");
+                baseUrl = baseUrl + "/deactivation";
                 break;
 
             case "role_change":
                 msg.setSubject("Changement de rôle");
                 msg.setText("Votre rôle a été modifié vers : " + additionalInfo);
+                baseUrl = baseUrl + "/change";
                 break;
 
             case "create":
@@ -233,44 +274,28 @@ public class AccountController {
                 msg.setText("Votre compte a été créé avec succès !\n"
                         + "Identifiant : " + email + "\n"
                         + "Mot de passe : " + additionalInfo);
+                baseUrl = baseUrl + "/create";
                 break;
 
             case "update":
                 msg.setSubject("Mise à jour de compte");
                 msg.setText("Vos informations de compte ont été mises à jour.");
+                baseUrl = baseUrl + "/update";
                 break;
 
             case "delete_user":
                 msg.setSubject("Suppression de compte");
                 msg.setText("Votre compte a été supprimé. Rôle : " + additionalInfo);
+                baseUrl = baseUrl + "/delete";
                 break;
 
             default:
                 msg.setSubject("Notification");
                 msg.setText("Une action a été effectuée sur votre compte.");
+                baseUrl = baseUrl + "/";
                 break;
         }
 
         javaMailSender.send(msg);
     }
-
 }
-//    void sendEmail(String email, boolean state) {
-//
-//        SimpleMailMessage msg = new SimpleMailMessage();
-//        msg.setTo(email);
-//        if(state == true)
-//        {
-//            msg.setSubject("Account Has Been Activated");
-//            msg.setText("Hello, Your account has been activated. "
-//                    +
-//                    "You can log in : http://127.0.0.1:81/login"
-//                    + " \n Best Regards!");
-//        }
-//        else
-//        {
-//            msg.setSubject("Account Has Been disactivated");
-//            msg.setText("Hello, Your account has been disactivated.");
-//        }
-//        javaMailSender.send(msg);
-

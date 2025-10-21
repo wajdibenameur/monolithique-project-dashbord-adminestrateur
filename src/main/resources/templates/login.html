@@ -3,63 +3,113 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Spring Security Tutorial</title>
+    <title>Connexion - Plateforme E-Learning</title>
     <link rel="stylesheet" type="text/css" th:href="@{/css/login.css}" />
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Font Awesome pour les icônes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
-<body>
+<body class="bg-light">
 
-<div class="container mt-5" style="max-width: 400px;">
+<div class="container mt-5" style="max-width: 450px;">
 
-    <!-- Bouton vers page inscription -->
+    <!-- Bouton vers page inscription - GARDÉ IDENTIQUE -->
     <form th:action="@{/registration}" method="get" class="mb-3">
-        <button class="btn btn-warning w-100" type="submit">Go To Registration Page</button>
+        <button class="btn btn-warning w-100" type="submit">
+            <i class="fas fa-user-plus me-2"></i>Go To Registration Page
+        </button>
     </form>
-    <div th:if="${param.logout}">
-        <p style="color:green;">Vous avez été déconnecté avec succès.</p>
-    </div>
-    <!-- Message d'erreur général -->
-    <div th:if="${error}" class="alert alert-danger" role="alert" th:text="${error}"></div>
 
-    <!-- Message d'erreur login -->
-    <div th:if="${param.error}" class="alert alert-danger" role="alert">
-        Email or Password invalid, please verify
-    </div>
+    <!-- Card principale -->
+    <div class="card shadow-lg border-0">
+        <div class="card-body p-4">
 
-    <!-- Image/logo centrée -->
-    <div class="text-center mb-4">
-        <img th:src="@{/images/login.jpg}" alt="Logo" class="img-fluid" style="max-width: 300px; height: auto;" />
-    </div>
-
-    <!-- Formulaire de connexion -->
-    <form th:action="@{/login}" method="POST" class="needs-validation" novalidate>
-        <h3 class="mb-4 text-center">Welcome</h3>
-
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="text" id="email" name="email" placeholder="Email" class="form-control" required />
-            <div class="invalid-feedback">
-                Please enter your email.
+            <!-- Messages de déconnexion - GARDÉ IDENTIQUE -->
+            <div th:if="${param.logout}" class="alert alert-success alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                Vous avez été déconnecté avec succès.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
+
+            <!-- Message d'erreur général - GARDÉ IDENTIQUE -->
+            <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <span th:text="${error}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Message d'erreur login - GARDÉ IDENTIQUE -->
+            <div th:if="${param.error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-times-circle me-2"></i>
+                Email or Password invalid, please verify
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
+            <!-- Image/logo centrée - GARDÉ IDENTIQUE -->
+            <div class="text-center mb-4">
+                <img th:src="@{/images/login.jpg}" alt="Logo" class="img-fluid rounded"
+                     style="max-width: 300px; height: auto;" />
+            </div>
+
+            <!-- Formulaire de connexion - PARAMÈTRES GARDÉS IDENTIQUES -->
+            <form th:action="@{/login}" method="POST" class="needs-validation" novalidate>
+                <h3 class="mb-4 text-center text-primary">
+                    <i class="fas fa-graduation-cap me-2"></i>Welcome
+                </h3>
+
+                <!-- Email - GARDÉ name="email" -->
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-bold">
+                        <i class="fas fa-envelope me-2"></i>Email
+                    </label>
+                    <input type="email" id="email" name="email" placeholder="votre.email@exemple.com"
+                           class="form-control form-control-lg" required />
+                    <div class="invalid-feedback">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        Please enter your email.
+                    </div>
+                </div>
+
+                <!-- Password - GARDÉ name="password" -->
+                <div class="mb-4">
+                    <label for="password" class="form-label fw-bold">
+                        <i class="fas fa-lock me-2"></i>Password
+                    </label>
+                    <div class="input-group">
+                        <input type="password" id="password" name="password" placeholder="Votre mot de passe"
+                               class="form-control form-control-lg" required />
+                        <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                            <i class="fas fa-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                    <div class="invalid-feedback">
+                        <i class="fas fa-exclamation-circle me-1"></i>
+                        Please enter your password.
+                    </div>
+                </div>
+
+                <!-- Bouton de connexion -->
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </button>
+            </form>
         </div>
 
-        <div class="mb-4">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" id="password" name="password" placeholder="Password" class="form-control" required />
-            <div class="invalid-feedback">
-                Please enter your password.
-            </div>
+        <!-- Footer de la carte -->
+        <div class="card-footer text-center bg-light">
+            <p class="mb-0 text-muted">
+                <i class="fas fa-shield-alt me-1"></i>
+                Plateforme E-Learning - Connexion sécurisée
+            </p>
         </div>
-
-        <button type="submit" class="btn btn-primary w-100">Login</button>
-    </form>
+    </div>
 </div>
 
-<!-- Bootstrap 5 JS bundle with Popper -->
+<!-- Bootstrap 5 JS bundle with Popper - GARDÉ IDENTIQUE -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Validation simple Bootstrap -->
+<!-- Validation simple Bootstrap - GARDÉ IDENTIQUE -->
 <script>
     (function () {
         'use strict';
@@ -74,6 +124,24 @@
             }, false);
         });
     })();
+</script>
+
+<!-- Script pour afficher/masquer le mot de passe - NOUVEAU -->
+<script>
+    document.getElementById('togglePassword').addEventListener('click', function() {
+        const passwordField = document.getElementById('password');
+        const eyeIcon = document.getElementById('eyeIcon');
+
+        if (passwordField.type === 'password') {
+            passwordField.type = 'text';
+            eyeIcon.classList.remove('fa-eye');
+            eyeIcon.classList.add('fa-eye-slash');
+        } else {
+            passwordField.type = 'password';
+            eyeIcon.classList.remove('fa-eye-slash');
+            eyeIcon.classList.add('fa-eye');
+        }
+    });
 </script>
 
 </body>
